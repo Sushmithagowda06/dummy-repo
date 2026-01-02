@@ -1,17 +1,33 @@
 require("dotenv").config();
+
+const seedDB = require("./seed_db.cjs");
 const exportDB = require("./export_db.cjs");
 const sendMail = require("./mailer.cjs");
+const notify = require("./notify.cjs");
 
-(async () => {
-  console.log("⏰ Cron job started");
+module.exports = async function runJob() {
+  const time = new Date().toLocaleString("en-IN", {
+    timeZone: "Asia/Kolkata"
+  });
+
+  console.log("🚀 Job started at", time);
 
   try {
-    const file = await exportDB();
-    await sendMail(file);
-    console.log("✅ Job completed");
-    process.exit(0);
-  } catch (e) {
-    console.error("❌ Job failed:", e);
-    process.exit(1);
+    await seedDB();                 // recreate DB
+    const file = await exportDB();  // export to Excel
+    await sendMail(file);           // send attachment
+
+    await notify({
+      subject: "✅ EXPORT SUCCESS",
+      message: `Export completed successfully at ${time}`,
+    });
+
+  } catch (err) {
+    await notify({
+      subject: "❌ EXPORT FAILED",
+      message: `Export failed at ${time}\n\n${err.message}`,
+    });
+
+    throw err;
   }
-})();
+};

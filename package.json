@@ -1,18 +1,15 @@
 {
   "name": "dummy-cron-mailer",
   "version": "1.0.0",
-  "main": "index.js",
+  "main": "cron_runner.cjs",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node cron_runner.cjs"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
   "dependencies": {
-    "dotenv": "^17.2.3",
-    "nodemailer": "^7.0.12",
-    "sqlite3": "^5.1.7",
-    "xlsx": "^0.18.5"
-  }
+  "dotenv": "^17.2.3",
+  "node-cron": "^3.0.3",
+  "nodemailer": "^7.0.12",
+  "sqlite3": "^5.1.7",
+  "xlsx": "^0.18.5"
+}
 }
