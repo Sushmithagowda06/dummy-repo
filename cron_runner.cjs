@@ -1,83 +1,43 @@
 require("dotenv").config();
-const cron = require("node-cron");
-const fs = require("fs");
 
 const seedDB = require("./seed_db.cjs");
 const exportDB = require("./export_db.cjs");
 const sendMail = require("./mailer.cjs");
 const notify = require("./notify.cjs");
 
-const FLAG_FILE = "export_success.flag";
-
-console.log("🟢 Cron service running...");
-
-/* ===============================
-   SHARED EXPORT JOB
-================================ */
-async function runExportJob(type) {
-  const time = new Date().toLocaleString("en-IN", {
+(async () => {
+  const startTime = new Date().toLocaleString("en-IN", {
     timeZone: "Asia/Kolkata",
   });
 
-  // ⛔ Skip retry if primary succeeded
-  if (type === "RETRY" && fs.existsSync(FLAG_FILE)) {
-    console.log("⏩ Skipping retry — already exported");
-    return;
-  }
+  console.log("⏰ Railway cron triggered at", startTime);
 
   try {
-    console.log(`⏰ ${type} cron started at ${time}`);
+    await seedDB();                 // recreate DB
+    console.log("🗄️ DB seeded");
 
-    await seedDB();            // recreate DB
-    const file = await exportDB(); // export Excel
-    await sendMail(file);      // email attachment
+    const file = await exportDB();  // export Excel
+    console.log("📄 Exported DB");
 
-    fs.writeFileSync(FLAG_FILE, "OK");
+    await sendMail(file);           // send email
+    console.log("📧 Email sent");
 
     await notify({
-      subject: `✅ EXPORT SUCCESS (${type})`,
-      message: `Export completed at ${time}`,
+      subject: "✅ EXPORT SUCCESS",
+      message: `Export completed successfully at ${startTime}`,
     });
 
-    console.log("✅ Export completed");
+    console.log("✅ Job completed");
+    process.exit(0);
 
   } catch (err) {
-    console.error("❌ Export failed:", err);
+    console.error("❌ Job failed:", err);
 
     await notify({
-      subject: `❌ EXPORT FAILED (${type})`,
-      message: `Failed at ${time}\n\n${err.message}`,
+      subject: "❌ EXPORT FAILED",
+      message: `Export FAILED at ${startTime}\n\n${err.message}`,
     });
+
+    process.exit(1);
   }
-}
-
-/* ===============================
-   PRIMARY — 8:40 PM IST
-   Cron: 40 20 * * *
-================================ */
-cron.schedule("50 21 * * *", async () => {
-  await runExportJob("PRIMARY");
-});
-
-/* ===============================
-   RETRY — 11:30 PM IST
-   Cron: 30 23 * * *
-================================ */
-cron.schedule("30 23 * * *", async () => {
-  await runExportJob("RETRY");
-});
-
-/* ===============================
-   RESET FLAG — Midnight
-================================ */
-cron.schedule("0 0 * * *", () => {
-  if (fs.existsSync(FLAG_FILE)) {
-    fs.unlinkSync(FLAG_FILE);
-    console.log("🔄 Export flag reset for next day");
-  }
-});
-
-/* ===============================
-   KEEP RAILWAY CONTAINER ALIVE
-================================ */
-setInterval(() => {}, 1000 * 60 * 60);
+})();

@@ -1,22 +1,37 @@
 const sqlite3 = require("sqlite3").verbose();
 const XLSX = require("xlsx");
+const { DB_PATH } = require("./db.js");
 
-module.exports = () => {
+module.exports = async () => {
   return new Promise((resolve, reject) => {
-    const db = new sqlite3.Database("db.sqlite");
+    const db = new sqlite3.Database(DB_PATH);
 
-    db.all("SELECT * FROM appointments", (err, rows) => {
-      if (err) return reject(err);
+    db.serialize(() => {
+      // 🔐 ensure table exists
+      db.run(`
+        CREATE TABLE IF NOT EXISTS appointments (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          patient_name TEXT,
+          email TEXT,
+          date TEXT,
+          time TEXT
+        )
+      `);
 
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(rows);
-      XLSX.utils.book_append_sheet(wb, ws, "Appointments");
+      db.all("SELECT * FROM appointments", (err, rows) => {
+        if (err) return reject(err);
 
-      const filePath = "appointments.xlsx";
-      XLSX.writeFile(wb, filePath);
+        const ws = XLSX.utils.json_to_sheet(rows);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Appointments");
 
-      console.log("📄 Exported DB to Excel");
-      resolve(filePath);
+        const file = "appointments.xlsx";
+        XLSX.writeFile(wb, file);
+
+        console.log("📄 Exported DB to Excel");
+        db.close();
+        resolve(file);
+      });
     });
   });
 };

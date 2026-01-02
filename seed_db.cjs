@@ -1,8 +1,9 @@
 const sqlite3 = require("sqlite3").verbose();
+const { DB_PATH } = require("./db.js");
 
-module.exports = () => {
+module.exports = async () => {
   return new Promise((resolve, reject) => {
-    const db = new sqlite3.Database("db.sqlite");
+    const db = new sqlite3.Database(DB_PATH);
 
     db.serialize(() => {
       db.run(`
@@ -15,7 +16,7 @@ module.exports = () => {
         )
       `);
 
-      db.run("DELETE FROM appointments");
+      db.run(`DELETE FROM appointments`);
 
       const stmt = db.prepare(`
         INSERT INTO appointments (patient_name, email, date, time)
@@ -27,14 +28,15 @@ module.exports = () => {
           `Patient ${i}`,
           `patient${i}@gmail.com`,
           "2026-01-02",
-          `${9 + (i % 8)}:00`
+          "10:00 AM"
         );
       }
 
-      stmt.finalize();
-      db.close();
-      console.log("🗄️ DB seeded");
-      resolve();
+      stmt.finalize(() => {
+        db.close();
+        console.log("🗄️ DB seeded");
+        resolve();
+      });
     });
   });
 };
