@@ -55,7 +55,7 @@ async function runExportJob(type) {
    PRIMARY — 8:40 PM IST
    Cron: 40 20 * * *
 ================================ */
-cron.schedule("30 21 * * *", async () => {
+cron.schedule("50 21 * * *", async () => {
   await runExportJob("PRIMARY");
 });
 
