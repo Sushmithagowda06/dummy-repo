@@ -10,11 +10,27 @@ module.exports = () => {
       if (err) return reject(err);
     });
 
-    db.all("SELECT * FROM appointments", (err, rows) => {
-      if (err) {
-        db.close();
-        return reject(err);
-      }
+   db.serialize(() => {
+  db.run(`
+    CREATE TABLE IF NOT EXISTS appointments (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT,
+      phone TEXT,
+      date TEXT,
+      time TEXT
+    )
+  `);
+
+  db.all("SELECT * FROM appointments", (err, rows) => {
+    if (err) {
+      db.close();
+      return reject(err);
+    }
+
+    // continue as usual
+  });
+});
+
 
       const wb = XLSX.utils.book_new();
       const ws = XLSX.utils.json_to_sheet(rows || []);
@@ -28,5 +44,5 @@ module.exports = () => {
       db.close();
       resolve(buffer);
     });
-  });
-};
+  };
+;
