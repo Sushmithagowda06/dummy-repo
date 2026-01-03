@@ -1,43 +1,27 @@
 require("dotenv").config();
 
-const seedDB = require("./seed_db.cjs");
-const exportDB = require("./export_db.cjs");
-const sendMail = require("./mailer.cjs");
-const notify = require("./notify.cjs");
+const cron = require("node-cron");
+const exportDb = require("./export_db.cjs");
+const mailer = require("./mailer.cjs");
 
-(async () => {
-  const startTime = new Date().toLocaleString("en-IN", {
-    timeZone: "Asia/Kolkata",
-  });
+process.env.TZ = "Asia/Kolkata";
 
-  console.log("⏰ Railway cron triggered at", startTime);
-
+async function runJob() {
   try {
-    await seedDB();                 // recreate DB
-    console.log("🗄️ DB seeded");
+    console.log("📤 Exporting DB...");
+    const buffer = await exportDb();
 
-    const file = await exportDB();  // export Excel
-    console.log("📄 Exported DB");
+    console.log("📧 Sending mail...");
+    await mailer.sendReport(buffer);
 
-    await sendMail(file);           // send email
-    console.log("📧 Email sent");
-
-    await notify({
-      subject: "✅ EXPORT SUCCESS",
-      message: `Export completed successfully at ${startTime}`,
-    });
-
-    console.log("✅ Job completed");
-    process.exit(0);
-
+    console.log("✅ Job finished successfully");
   } catch (err) {
     console.error("❌ Job failed:", err);
-
-    await notify({
-      subject: "❌ EXPORT FAILED",
-      message: `Export FAILED at ${startTime}\n\n${err.message}`,
-    });
-
-    process.exit(1);
   }
-})();
+}
+
+// 10:15 PM IST
+cron.schedule("15 14 * * *", runJob);
+
+// run immediately (local + Railway)
+runJob();

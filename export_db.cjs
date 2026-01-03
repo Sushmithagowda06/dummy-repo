@@ -1,22 +1,32 @@
 const sqlite3 = require("sqlite3").verbose();
 const XLSX = require("xlsx");
-const DB_PATH = require("./db");
+const path = require("path");
 
-module.exports = async () => {
+const DB_PATH = path.join(__dirname, "db.sqlite");
+
+module.exports = () => {
   return new Promise((resolve, reject) => {
-    const db = new sqlite3.Database(DB_PATH);
+    const db = new sqlite3.Database(DB_PATH, err => {
+      if (err) return reject(err);
+    });
 
     db.all("SELECT * FROM appointments", (err, rows) => {
-      if (err) return reject(err);
+      if (err) {
+        db.close();
+        return reject(err);
+      }
 
       const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(rows);
+      const ws = XLSX.utils.json_to_sheet(rows || []);
       XLSX.utils.book_append_sheet(wb, ws, "Appointments");
 
-      const file = "appointments.xlsx";
-      XLSX.writeFile(wb, file);
+      const buffer = XLSX.write(wb, {
+        bookType: "xlsx",
+        type: "buffer",
+      });
 
-      db.close(() => resolve(file));
+      db.close();
+      resolve(buffer);
     });
   });
 };

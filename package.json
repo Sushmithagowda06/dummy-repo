@@ -1,12 +1,12 @@
 {
   "name": "dummy-cron-mailer",
   "version": "1.0.0",
-  "type": "commonjs",
   "scripts": {
     "start": "node cron_runner.cjs"
   },
   "dependencies": {
     "dotenv": "^17.2.3",
+    "node-cron": "^4.2.1",
     "nodemailer": "^7.0.12",
     "sqlite3": "^5.1.7",
     "xlsx": "^0.18.5"
