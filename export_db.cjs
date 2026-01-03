@@ -6,43 +6,40 @@ const DB_PATH = path.join(__dirname, "db.sqlite");
 
 module.exports = () => {
   return new Promise((resolve, reject) => {
-    const db = new sqlite3.Database(DB_PATH, err => {
-      if (err) return reject(err);
-    });
+    const db = new sqlite3.Database(DB_PATH);
 
-   db.serialize(() => {
-  db.run(`
-    CREATE TABLE IF NOT EXISTS appointments (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      name TEXT,
-      phone TEXT,
-      date TEXT,
-      time TEXT
-    )
-  `);
+    db.serialize(() => {
+      // 1️⃣ Ensure table exists
+      db.run(`
+        CREATE TABLE IF NOT EXISTS appointments (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          name TEXT,
+          phone TEXT,
+          date TEXT,
+          time TEXT
+        )
+      `);
 
-  db.all("SELECT * FROM appointments", (err, rows) => {
-    if (err) {
-      db.close();
-      return reject(err);
-    }
+      // 2️⃣ Read rows SAFELY
+      db.all("SELECT * FROM appointments", (err, rows) => {
+        if (err) {
+          db.close();
+          return reject(err);
+        }
 
-    // continue as usual
-  });
-});
+        // 3️⃣ Create Excel
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.json_to_sheet(rows || []);
+        XLSX.utils.book_append_sheet(wb, ws, "Appointments");
 
+        const buffer = XLSX.write(wb, {
+          bookType: "xlsx",
+          type: "buffer",
+        });
 
-      const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.json_to_sheet(rows || []);
-      XLSX.utils.book_append_sheet(wb, ws, "Appointments");
-
-      const buffer = XLSX.write(wb, {
-        bookType: "xlsx",
-        type: "buffer",
+        db.close();
+        resolve(buffer);
       });
-
-      db.close();
-      resolve(buffer);
     });
-  };
-;
+  });
+};
