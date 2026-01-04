@@ -1,26 +1,34 @@
-const nodemailer = require("nodemailer");
+const sgMail = require("@sendgrid/mail");
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT),
-  secure: false,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+if (!process.env.SENDGRID_API_KEY) {
+  throw new Error("SENDGRID_API_KEY is missing");
+}
+
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 exports.sendReport = async (buffer) => {
-  return transporter.sendMail({
-    from: process.env.SMTP_USER,
-    to: process.env.REPORT_EMAIL,
+  if (!process.env.FROM_EMAIL) {
+    throw new Error("FROM_EMAIL is missing");
+  }
+
+  if (!process.env.REPORT_EMAIL) {
+    throw new Error("REPORT_EMAIL is missing");
+  }
+
+  const msg = {
+    to: process.env.REPORT_EMAIL,        // Receiver
+    from: process.env.FROM_EMAIL,        // Verified sender
     subject: "Appointments Report",
     text: "Attached is today's appointments report.",
     attachments: [
       {
+        content: buffer.toString("base64"),
         filename: "appointments.xlsx",
-        content: buffer,
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        disposition: "attachment",
       },
     ],
-  });
+  };
+
+  await sgMail.send(msg);
 };
