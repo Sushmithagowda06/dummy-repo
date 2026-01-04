@@ -16,8 +16,8 @@ exports.sendReport = async (buffer) => {
   }
 
   const msg = {
-    to: process.env.REPORT_EMAILS.split(","),        // Receiver
-    from: process.env.FROM_EMAIL,        // Verified sender
+    to: process.env.REPORT_EMAIL.split(","), // ✅ FIXED
+    from: process.env.FROM_EMAIL,
     subject: "Appointments Report",
     text: "Attached is today's appointments report.",
     attachments: [
