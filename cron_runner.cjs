@@ -21,7 +21,7 @@ async function runJob() {
 }
 
 // 10:15 PM IST
-cron.schedule("25 00 * * *", runJob);
+cron.schedule("31 00 * * *", runJob);
 
 // run immediately (local + Railway)
 runJob();
