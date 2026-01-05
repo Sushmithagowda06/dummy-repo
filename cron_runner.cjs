@@ -21,7 +21,7 @@ async function runJob() {
 }
 
 // ⏰ 10:15 PM IST (CORRECT)
-cron.schedule("46 11 * * *", runJob);
+cron.schedule("50 11 * * *", runJob);
 
 // Optional: run once on deploy (keep for testing)
 runJob();
