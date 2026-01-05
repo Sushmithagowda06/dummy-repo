@@ -3,8 +3,9 @@ const pool = require("./db_pg.cjs");
 
 module.exports = async () => {
   const result = await pool.query(
-    "SELECT * FROM appointments ORDER BY id DESC"
-  );
+  "SELECT * FROM public.appointments ORDER BY id"
+);
+
 
   console.log("Rows fetched from Postgres:", result.rows.length);
 

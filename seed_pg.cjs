@@ -2,12 +2,11 @@ const pool = require("./db_pg.cjs");
 
 (async () => {
   await pool.query(`
-    INSERT INTO appointments (patient_name, email, date, time)
+    INSERT INTO public.appointments (patient_name, email, date, time)
     VALUES
-    ('Rekha Ravi', 'rekharavi909@gmail.com', '2026-01-05', '15:20'),
-    ('Test Patient', 'test@example.com', '2026-01-05', '15:30')
+    ('Test User', 'test@example.com', CURRENT_DATE, '10:30'),
+    ('Demo User', 'demo@example.com', CURRENT_DATE, '11:00')
   `);
 
-  console.log("✅ test data inserted");
-  process.exit(0);
+  console.log("✅ seed data inserted");
 })();
