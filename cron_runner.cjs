@@ -1,5 +1,5 @@
 require("dotenv").config();
-
+require("./init_pg.cjs");
 const cron = require("node-cron");
 const exportDb = require("./export_db.cjs");
 const mailer = require("./mailer.cjs");
@@ -21,7 +21,7 @@ async function runJob() {
 }
 
 // 10:15 PM IST
-cron.schedule("31 00 * * *", runJob);
+cron.schedule("15 11 * * *", runJob);
 
 // run immediately (local + Railway)
 runJob();
