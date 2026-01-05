@@ -1,21 +1,33 @@
-const XLSX = require("xlsx");
 const pool = require("./db_pg.cjs");
+const XLSX = require("xlsx");
 
 module.exports = async () => {
-  const result = await pool.query(
-  "SELECT * FROM public.appointments ORDER BY id"
-);
-
+  // 1️⃣ Fetch ALL rows
+  const result = await pool.query(`
+    SELECT
+      id,
+      phone,
+      patient_name AS name,
+      date,
+      time,
+      created_at AS "BookedAt"
+    FROM public.appointments
+    ORDER BY id ASC
+  `);
 
   console.log("Rows fetched from Postgres:", result.rows.length);
 
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(result.rows);
+  // 2️⃣ Convert to Excel
+  const workbook = XLSX.utils.book_new();
+  const worksheet = XLSX.utils.json_to_sheet(result.rows);
 
-  XLSX.utils.book_append_sheet(wb, ws, "Appointments");
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Appointments");
 
-  return XLSX.write(wb, {
+  // 3️⃣ Return buffer
+  const buffer = XLSX.write(workbook, {
     bookType: "xlsx",
     type: "buffer",
   });
+
+  return buffer;
 };
