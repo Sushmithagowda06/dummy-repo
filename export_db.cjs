@@ -1,45 +1,20 @@
-const sqlite3 = require("sqlite3").verbose();
 const XLSX = require("xlsx");
-const path = require("path");
+const pool = require("./db_pg.cjs");
 
-const DB_PATH = path.join(__dirname, "db.sqlite");
+module.exports = async () => {
+  const result = await pool.query(
+    "SELECT * FROM appointments ORDER BY id DESC"
+  );
 
-module.exports = () => {
-  return new Promise((resolve, reject) => {
-    const db = new sqlite3.Database(DB_PATH);
+  console.log("Rows fetched from Postgres:", result.rows.length);
 
-    db.serialize(() => {
-      // 1️⃣ Ensure table exists
-      db.run(`
-        CREATE TABLE IF NOT EXISTS appointments (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          name TEXT,
-          phone TEXT,
-          date TEXT,
-          time TEXT
-        )
-      `);
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(result.rows);
 
-      // 2️⃣ Read rows SAFELY
-      db.all("SELECT * FROM appointments", (err, rows) => {
-        if (err) {
-          db.close();
-          return reject(err);
-        }
+  XLSX.utils.book_append_sheet(wb, ws, "Appointments");
 
-        // 3️⃣ Create Excel
-        const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.json_to_sheet(rows || []);
-        XLSX.utils.book_append_sheet(wb, ws, "Appointments");
-
-        const buffer = XLSX.write(wb, {
-          bookType: "xlsx",
-          type: "buffer",
-        });
-
-        db.close();
-        resolve(buffer);
-      });
-    });
+  return XLSX.write(wb, {
+    bookType: "xlsx",
+    type: "buffer",
   });
 };
