@@ -1,5 +1,5 @@
 require("dotenv").config();
-require("./init_pg.cjs");
+require("./seed_pg.cjs");
 
-console.log("✅ DB initialized, exiting...");
+console.log("✅ DB seeded, exiting...");
 process.exit(0);
